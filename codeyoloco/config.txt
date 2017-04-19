@@ -8,3 +8,9 @@ scoreboard = 34.209.139.12
 [links]
 
 project-proposal = https://docs.google.com/a/asu.edu/document/d/146tz2zVrMgf2qbLYtt8Zf0DmHRuE8IytSX4QG_1tbgA/edit?usp=sharing
+
+#Add code to scp
+#Add code for smaller modules for capturing flag, autosubmitting on tick and capturing and resubmitting every tick
+
+#SCP files command:
+scp -o IdentitiesOnly=yes -i ./root_key -P 1338 root@34.223.241.147:~/sample_c .
