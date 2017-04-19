@@ -1,0 +1,17 @@
+Tips for CTF:
+
+Web and application both vulnerabilities:
+
+If code given, modify/patch and rerun your service - check how to rerun it on the same port
+
+If binary given, edit binary using:
+https://danluu.com/edit-binary/
+
+This link has a lot of CTF resources that may help you in preparing & understanding CTFs, I believe there are also permanent CTF games you can try to access:
+
+http://resources.infosecinstitute.com/tools-of-trade-and-resources-to-prepare-in-a-hacker-ctf-competition-or-challenge/
+
+For web vulnerabilities, use pwntools
+
+Learn useful commands in tcpdump and wireshark
+
