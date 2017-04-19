@@ -3,5 +3,8 @@
 team-ip = 52.34.158.221
 username = team2@example.com
 password = password
+scoreboard = 34.209.139.12
 
-https://docs.google.com/a/asu.edu/document/d/146tz2zVrMgf2qbLYtt8Zf0DmHRuE8IytSX4QG_1tbgA/edit?usp=sharing
+[links]
+
+project-proposal = https://docs.google.com/a/asu.edu/document/d/146tz2zVrMgf2qbLYtt8Zf0DmHRuE8IytSX4QG_1tbgA/edit?usp=sharing
