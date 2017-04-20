@@ -5,11 +5,33 @@ __author__:surajshah
 from ictf import iCTF
 import os, sys
 import ConfigParser
+config = os.path.join(os.path.dirname(__file__), 'config.txt')
 
-def main():
+def get_t():
 	try:
 		configParser = ConfigParser.RawConfigParser()   
-		configParser.read("codeyoloco/config.txt")
+		configParser.read(config)
+
+		team_ip = 'http://' + str(configParser.get("login","team-ip")) + '/'
+		i = iCTF(team_ip)
+
+		t = i.login(str(configParser.get("login","username")),
+			str(configParser.get("login","password")))
+		return t
+	except Exception as e:
+		exc_type, exc_obj, exc_tb = sys.exc_info()
+		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+		print(e, exc_type, fname, exc_tb.tb_lineno)
+
+
+def get_service_list():
+	return get_t().get_service_list()
+
+
+def first_login():
+	try:
+		configParser = ConfigParser.RawConfigParser()   
+		configParser.read(config)
 
 		team_ip = 'http://' + str(configParser.get("login","team-ip")) + '/'
 		i = iCTF(team_ip)
@@ -47,7 +69,6 @@ def main():
 		print 'Connect to root with: ./root_ssh.sh'
 		print 'Connect to ctf with: ./ctf_ssh.sh'
 
-
 	except Exception as e:
 		exc_type, exc_obj, exc_tb = sys.exc_info()
 		fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -55,4 +76,4 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
+	first_login()
