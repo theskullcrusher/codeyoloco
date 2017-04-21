@@ -59,7 +59,7 @@ def first_login():
 		os.chmod("root_ssh.sh", 0700)
 
 		with open("ctf_ssh.sh", 'w+') as f:
-			ssh_ctf = ssh_script.format("./ctf_key", key_info['port'], 'root', key_info['ip'])
+			ssh_ctf = ssh_script.format("./ctf_key", key_info['port'], 'ctf', key_info['ip'])
 			f.write(ssh_ctf)
 		os.chmod("ctf_ssh.sh", 0700)
 
