@@ -16,3 +16,5 @@ project-proposal = https://docs.google.com/a/asu.edu/document/d/146tz2zVrMgf2qbL
 scp -o IdentitiesOnly=yes -i ./root_key -P 1338 root@34.223.241.147:~/sample_c .
 
 #write function to get targets
+
+#look into how to patch services and rerun them on the same port
