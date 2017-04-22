@@ -1,6 +1,6 @@
 Tips for CTF:
 
-Web and application both vulnerabilities:
+Web and application both vulnerabilities:									
 
 If code given, modify/patch and rerun your service - check how to rerun it on the same port
 
@@ -15,3 +15,28 @@ For web vulnerabilities, use pwntools
 
 Learn useful commands in tcpdump and wireshark
 
+To do:
+
+>>Suraj
+#Add code for smaller modules for capturing flag, autosubmitting on tick and capturing and resubmitting every tick
+#automate SCP files command:
+scp -o IdentitiesOnly=yes -i ./root_key -P 1338 root@34.223.241.147:~/sample_c .
+#write function to get targets
+
+
+>>Mohit
+#look into how to patch services and rerun them on the same port
+#wireshark and tcpdump and elkstack
+
+>>Vishnu and James
+#tools for binary patching: bsdiff and bspatch and autobuff
+http://www.daemonology.net/bsdiff/
+#currently c vulnerability
+
+>>Josh and Lawrence
+#Detect problematic traffic signatures - python/eval/buffer-overflows shouldnt be allowed - the core of our project idea - sniffer.
+You guys need to interrupt and stop the connection if somebody enters values like python or bash code or hex code.
+This could be done by monitoring tcp traffic, if the packet contains such values, reply with the correct seq and ack with a reset or figure out how to  terminate connection to that port. Add a variable to config.txt that knows the ports
+
+>>Deepak
+Web vulnerabilities - Assignment 4
