@@ -38,5 +38,7 @@ http://www.daemonology.net/bsdiff/
 You guys need to interrupt and stop the connection if somebody enters values like python or bash code or hex code.
 This could be done by monitoring tcp traffic, if the packet contains such values, reply with the correct seq and ack with a reset or figure out how to  terminate connection to that port. Add a variable to config.txt that knows the ports
 
+Try binding a dummy service to port during duration of ticks --> replace it with real service when tick is almost over
+
 >>Deepak
 Web vulnerabilities - Assignment 4
