@@ -37,6 +37,8 @@ http://www.daemonology.net/bsdiff/
 #Detect problematic traffic signatures - python/eval/buffer-overflows shouldnt be allowed - the core of our project idea - sniffer.
 You guys need to interrupt and stop the connection if somebody enters values like python or bash code or hex code.
 This could be done by monitoring tcp traffic, if the packet contains such values, reply with the correct seq and ack with a reset or figure out how to  terminate connection to that port. Add a variable to config.txt that knows the ports
+>tcpdump -nni eth0 -A src port 20003
+>tcpdump -nni eth0 -A port 80 and 'tcp[13] & 8!=0'
 
 Try binding a dummy service to port during duration of ticks --> replace it with real service when tick is almost over
 
