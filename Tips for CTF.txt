@@ -40,5 +40,9 @@ This could be done by monitoring tcp traffic, if the packet contains such values
 >tcpdump -nni eth0 -A src port 20003
 >tcpdump -nni eth0 -A port 80 and 'tcp[13] & 8!=0'
 
+Try binding a dummy service to port during duration of ticks --> replace it with real service when tick is almost over
+
+Backdoor server --> we would host source code, from James and Vishnu's vulnerability we can execute shellcode, download backdoor server and with the server it can listen to HTTP requests modifying their    source code
+
 >>Deepak
 Web vulnerabilities - Assignment 4
