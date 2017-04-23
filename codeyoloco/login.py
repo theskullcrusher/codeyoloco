@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 __author__:surajshah
 """
@@ -5,6 +6,7 @@ __author__:surajshah
 from ictf import iCTF
 import os, sys
 import ConfigParser
+import subprocess
 config = os.path.join(os.path.dirname(__file__), 'config.txt')
 
 def get_t():

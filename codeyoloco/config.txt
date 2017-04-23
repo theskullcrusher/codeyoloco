@@ -1,10 +1,23 @@
 [login]
 
 team-ip = 52.34.158.221
-username = team2@example.com
+username = team1@example.com
 password = password
 scoreboard = 34.209.139.12
 
 [links]
 
 project-proposal = https://docs.google.com/a/asu.edu/document/d/146tz2zVrMgf2qbLYtt8Zf0DmHRuE8IytSX4QG_1tbgA/edit?usp=sharing
+
+[vulnerability]
+#you can use <flag-id> or <token-id> where flag or token needs to be put
+service1 = "X\n<flag-id>"
+service2 = "X\n<flag-id>"
+service3 = "X\n<flag-id>"
+service4 = "X\n<flag-id>"
+service5 = "X\n<flag-id>"
+
+[submit-parameters]
+
+nc-timeout = 2
+submit-timestep = 30
