@@ -14,8 +14,8 @@ project-proposal = https://docs.google.com/a/asu.edu/document/d/146tz2zVrMgf2qbL
 service1 = "X\n<flag-id>"
 service2 = "X\n<flag-id>"
 service3 = "X\n<flag-id>"
-service4 = "X\n<flag-id>"
-service5 = "X\n<flag-id>"
+service4 = "W\n<flag-id>"
+service5 = "W\n<flag-id>"
 
 [submit-parameters]
 
