@@ -11,13 +11,13 @@ project-proposal = https://docs.google.com/a/asu.edu/document/d/146tz2zVrMgf2qbL
 
 [vulnerability]
 #you can use <flag-id> or <token-id> where flag or token needs to be put
-service1 = "X\n<flag-id>"
-service2 = "X\n<flag-id>"
-service3 = "X\n<flag-id>"
-service4 = "W\n<flag-id>"
-service5 = "W\n<flag-id>"
+service1 = X\n<flag-id>
+service2 = X\n<flag-id>
+service3 = X\n<flag-id>
+service4 = W\n<flag-id>
+service5 = W\n<flag-id>
 
 [submit-parameters]
 
-nc-timeout = 2
+nc-timeout = 20
 submit-timestep = 30
