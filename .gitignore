@@ -96,3 +96,6 @@ root_*
 
 # PyCharm
 .idea/
+
+#logs
+logs.txt
