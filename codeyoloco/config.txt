@@ -1,9 +1,13 @@
 [login]
 
-team-ip = 52.34.158.221
-username = team1@example.com
-password = password
-scoreboard = 34.209.139.12
+team-ip = 35.167.152.77
+username = surajshah525@gmail.com
+password = 2cZXX5C6bBMq
+scoreboard = 54.69.209.162
+
+####faketeam
+##username = sheep@example.com
+##password = sheep
 
 [links]
 
