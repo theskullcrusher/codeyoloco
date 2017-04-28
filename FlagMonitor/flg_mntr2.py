@@ -4,17 +4,17 @@ __author__ = "Laurence Chang and Josh Smith"
 #Program to find the most recently updated flag in /opt/ctf/<servicefile>/rw/
 #This can be done by performing the command ls 
 
-import os, time
+import subprocess, time
 
 
 #using OS due to subprocess shell escaping strings. We want to be able to manipulate variables i think
 def main():
 	#ls -t | head -n1
-	var = "/home/laurence/test/"	# we should somehow be able to dynamically change this variable maybe?
-	fileToCat = os.popen("ls -t " + var + " | head -n1").read()	
-	#print fileToCat
-	payload = os.popen("cat " + var + fileToCat).read()
-	print payload
+	var = "/opt/ctf/sample_py/rw/"	# we should somehow be able to dynamically change this variable maybe?	
+	p1 = subprocess.Popen(["ls","-t", var], shell=true, stdout=subprocess.PIPE)
+	p2 = subprocess.Popen(["head",-n1],shell=true,stdin=p1.stdout,stdout=subprocess.PIPE).read()
+	print p2
+	
 	
 '''To do thoughts '''
 # Construct http packet using payload
