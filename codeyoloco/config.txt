@@ -14,7 +14,9 @@ scoreboard = 54.69.209.162
 project-proposal = https://docs.google.com/a/asu.edu/document/d/146tz2zVrMgf2qbLYtt8Zf0DmHRuE8IytSX4QG_1tbgA/edit?usp=sharing
 
 [vulnerability]
-#you can use <flag-id> or <token-id> where flag or token needs to be put
+#you can use <flag-id> or <token-id> or one of the following:
+#VARIABLES = ["<flag-id>","<token-id>","<port>","<team-id>","<query>"]
+
 service1 = X\n<flag-id>
 service2 = X\n<flag-id>
 service3 = X\n<flag-id>
