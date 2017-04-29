@@ -1,0 +1,12 @@
+cp <name> <name>_original
+cp <name>_original <name>_patched
+objdump <name>_original			# Move somewhere to look threw
+					# ID vulnerability
+vim <name>_patched
+vim> :%!xxd
+vim> <replace vulnerability with something else>
+vim> :%!xxd -r
+vim> wq
+sudo chown ctf:ctf_sample_c <name>_patched
+cp wrapper.sh wrapper.sh_org
+vim wrapper.sh				# Change so it calles <name>_patched instead
