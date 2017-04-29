@@ -19,7 +19,7 @@ project-proposal = https://docs.google.com/a/asu.edu/document/d/146tz2zVrMgf2qbL
 
 service1 = X\n<flag-id>
 service2 = X\n<flag-id>
-service3 = curl http://<team-id>:<port>/secret.cgi?note-id=<flag-id>
+service3 = curl http://<team-id>:<port>/secret.cgi?note_id=<flag-id>
 service4 = W\n<flag-id>
 service5 = W\n<flag-id>
 
