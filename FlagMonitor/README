@@ -1,3 +1,4 @@
 How to run flg_mntr.py
 ----------------------
- # Need to install 'requests' using pip install requests
+
+# flg_mntr.py takes a batch of the most recently changed files within the past 3 minutes and "brute forces" the system by sending all the possible "flags" and sending it to our server for automatic submission
