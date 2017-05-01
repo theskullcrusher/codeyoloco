@@ -1,6 +1,6 @@
 [login]
 
-team-ip = 35.167.152.77
+team-ip = 35.160.215.67
 username = surajshah525@gmail.com
 password = 2cZXX5C6bBMq
 scoreboard = 34.210.90.208
