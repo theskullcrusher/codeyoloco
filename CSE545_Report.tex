@@ -1,0 +1,197 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LaTeX Template: Project Titlepage Modified (v 0.1) by rcx
+%
+% Original Source: http://www.howtotex.com
+% Date: February 2014
+% 
+% This is a title page template which be used for articles & reports.
+% 
+% This is the modified version of the original Latex template from
+% aforementioned website.
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[12pt]{report}
+\usepackage[a4paper]{geometry}
+\usepackage[myheadings]{fullpage}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{graphicx, wrapfig, subcaption, setspace, booktabs}
+\usepackage[T1]{fontenc}
+\usepackage[font=small, labelfont=bf]{caption}
+\usepackage{fourier}
+\usepackage[protrusion=true, expansion=true]{microtype}
+\usepackage[english]{babel}
+\usepackage{sectsty}
+\usepackage{url, lipsum}
+
+
+\newcommand{\HRule}[1]{\rule{\linewidth}{#1}}
+\onehalfspacing
+\setcounter{tocdepth}{5}
+\setcounter{secnumdepth}{5}
+
+%-------------------------------------------------------------------------------
+% HEADER & FOOTER
+%-------------------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength\headheight{15pt}
+\fancyhead[L]{Code Yo Loco}
+\fancyhead[R]{Arizona State University}
+\fancyfoot[R]{Page \thepage\ of \pageref{LastPage}}
+%-------------------------------------------------------------------------------
+% TITLE PAGE
+%-------------------------------------------------------------------------------
+
+\begin{document}
+
+\title{ \normalsize \textsc{Team Code Yo Loco}
+		\\ [2.0cm]
+		\HRule{0.5pt} \\
+		\LARGE \textbf{\uppercase{An Approach to CTF Automation \\ PCTF Report}}
+		\HRule{2pt} \\ [0.5cm]
+		\normalsize \today \vspace*{5\baselineskip}}
+
+\date{}
+
+\author{Laurence Chang, James Hutchins, Deepak Krishnan, Mohit Mulchandani
+		\\ Suraj Shah, Vishnu Radja, Josh Smith \\ \\ 
+		Arizona State University \\
+		CSE 545 }
+
+\maketitle
+\tableofcontents
+\newpage
+
+%-------------------------------------------------------------------------------
+% Section title formatting
+\sectionfont{\scshape}
+%-------------------------------------------------------------------------------
+
+%-------------------------------------------------------------------------------
+% Abstract
+%-------------------------------------------------------------------------------
+\addcontentsline{toc}{section}{Abstract}
+\section*{Abstract}
+Our goal as team Code Yo Loco was to design an automated Python tool suite that would assist the team in both spectrums of attack and defense during the CSE 545 CTF. Our attack plan included identifying and exploiting at least one buffer overflow vulnerability, injecting shellcode which installs a malicious backdoor “flag monitor” on the victim machine, and stealing the flags directly from the file system. In addition, we used the example servers to develop additional tools that automated the collection of the flags. The correct flags will be part of the body section of a constructed HTTP packet sent to our host, in which another automated script will directly submit the flags to the master server. 
+
+%-------------------------------------------------------------------------------
+% Introduction
+%-------------------------------------------------------------------------------
+\addcontentsline{toc}{section}{Introduction}
+\section*{Introduction}
+A real time CTF requires the automation of working tools for the exploitation of services, defensive actions, and collection and submission of flags. This realization led to our efforts of attempting to minimize the amount of manual work required by the team members themselves, while ensuring most of the work load was automated by the various tools that were constructed. \\
+
+The tools developed not only served as standalone methods of automating needed functions such as server login, flag submissions, and execution of exploits, but also served as modules that we could further build on top of to develop other tools. Due to the unknown nature of what the actual game-server will be like at the time of competition, we design our system with a couple of assumptions using the test-server as a base and foundation to work with. \\
+
+Exploring the example CTF server, we found several key components that influenced the design of our project. First, the team's server ran three services, \texttt{sample.c}, \texttt{sample.py}, and \texttt{sample.web}, that we know are monitored by a "master" game server in order to check if the application is available and running or not. Bringing a service offline would result in the loss of points so this aspect of the game was something we had to consider in order to keep the availability of our services up. Another aspect of the CTF server we took into account was the interval of the ticks, or three minute rounds, that the server ran on. This observation was very important as this implied several consequences: \\
+
+\begin{enumerate}
+	\item The value of the flags in respect to their services change after every tick.
+	\item Resubmission of the new flags are required.
+	\item Opponent services may be patched, possibly increases the security of the application.
+	
+\end{enumerate}
+Therefore our approach in regards to the list above involves a focus on exploiting the vulnerabilities as soon as possible, and then through the initial exploitation, we are able to deploy a long term solution to automate the collection and submission of the victim's flags. \\
+
+In this report, we will cover our overall design including details of how each tool in our framework operates and the services they provide a CTF team. We follow up with explanations of how we developed our framework and reporting the justifications behind why these tools were built and the goal of what these tools are to achieve. We also justify the assumptions taken into account when developing the framework. We transition into the results we have achieved while also documenting some of the problems we had encountered or foresaw regarding our tools in relation to the actual competition. Finally we discuss the impact of our developments, tools, and observations in our conclusion.
+
+%-------------------------------------------------------------------------------
+% Design
+%-------------------------------------------------------------------------------
+\addcontentsline{toc}{section}{Design}
+\section*{Design}
+Our design considers the following assumptions we made about the game server:
+
+\begin{enumerate}
+	\item \textit{There will be at \textbf{least} one buffer overflow that allows us to inject the shell code that is equivalent in accomplishing the following two functions:}
+	\begin{itemize}
+		\item \texttt{wget <serverURI>} - This allows us to install the malicious backdoor on the victim machine
+		\item \texttt{python run backdoor.py} - This allows us to immediately begin running the script after installation
+	\end{itemize}
+	\item \textit{We assume flags are being stored, read, and write in the directory:} \\\\ \texttt{/opt/ctf/<some\_game\_service>/rw/} \\\\
+	This assumption is made with the statement that all game servers will be similar with each other, including our own. 
+	\item \textit{The existing services on the example server will also be present on the live server} \\\\ The current services on the example server can be automated through a tool we construct. Furthermore, if the new services added on the live CTF server are similar to the existing services, in terms of vulnerability and input, our tools should be easily configurable to also exploit the new services.
+\end{enumerate}
+
+We first define our offensive approach. Using the iCTF library provided, we built on top of the existing functions to create custom scripts that automated many tasks that gave us an advantage such as auto exploiting services and auto submitting flags. One major goal of our attack strategy was to develop a method to steal flags directly from the victim file system. This can be achieved by successfully exploiting a buffer overflow attack that will trigger a chain of events, beginning with the injection of a piece of shell code. This shell code will contain instructions to install a malicious backdoor program on their machine and will also run the installed program. The result would ideally be the stealing of flags directly from the file system and sending it back to our server which would also double as an automatic service to submit the flags received. This component of our strategy which we dub "the backdoor flag monitor" consists of two separate parts, the server and the flag monitoring program, that coordinate with each other achieve the goal of “direct” flag stealing. \\
+
+The server has three primary functions. It will first and foremost serve the shell code request for our backdoor.py and trigger an install of the program on the victim machine. The second function it has is to listen on a port to be decided and parse HTTP GET URI of the form:\\\\
+$<host>:<port>/flag_{1}/flag_{2}/.../flag{n}$\\\\ where $0 < flag_i \leq n$ depending on how many files are written to by the master server at every three minute interval. Thirdly, after parsing the URI in the GET request, the server submits the list of flags received to the master server. An important thing to note is that these flags submitted may or may not be correct. This is due to an unknown nature of why multiple files in the directory in which the flags are updated are written to or modified. Because of this behavior, we cannot completely rely on the value of the "most updated file" and rather decide to approach the problem by submitting a set of probable flags. The implementation of this approach is defined in our flag monitoring program, which we will dub \texttt{"backdoor.py"}.\\\\
+
+The malicious \texttt{backdoor.py} works only if assumptions \textbf{(1)} or \textbf{(2)} apply. As mentioned before, the program itself must first be on the victim server, and is designed with the knowledge that we only know from exploring our own server. 
+
+
+
+
+
+
+
+
+
+
+\end{document}
+
+%-------------------------------------------------------------------------------
+% SNIPPETS
+%-------------------------------------------------------------------------------
+
+%\begin{figure}[!ht]
+%	\centering
+%	\includegraphics[width=0.8\textwidth]{file_name}
+%	\caption{}
+%	\centering
+%	\label{label:file_name}
+%\end{figure}
+
+%\begin{figure}[!ht]
+%	\centering
+%	\includegraphics[width=0.8\textwidth]{graph}
+%	\caption{Blood pressure ranges and associated level of hypertension (American Heart Association, 2013).}
+%	\centering
+%	\label{label:graph}
+%\end{figure}
+
+%\begin{wrapfigure}{r}{0.30\textwidth}
+%	\vspace{-40pt}
+%	\begin{center}
+%		\includegraphics[width=0.29\textwidth]{file_name}
+%	\end{center}
+%	\vspace{-20pt}
+%	\caption{}
+%	\label{label:file_name}
+%\end{wrapfigure}
+
+%\begin{wrapfigure}{r}{0.45\textwidth}
+%	\begin{center}
+%		\includegraphics[width=0.29\textwidth]{manometer}
+%	\end{center}
+%	\caption{Aneroid sphygmomanometer with stethoscope (Medicalexpo, 2012).}
+%	\label{label:manometer}
+%\end{wrapfigure}
+
+%\begin{table}[!ht]\footnotesize
+%	\centering
+%	\begin{tabular}{cccccc}
+%	\toprule
+%	\multicolumn{2}{c} {Pearson's correlation test} & \multicolumn{4}{c} {Independent t-test} \\
+%	\midrule	
+%	\multicolumn{2}{c} {Gender} & \multicolumn{2}{c} {Activity level} & \multicolumn{2}{c} {Gender} \\
+%	\midrule
+%	Males & Females & 1st level & 6th level & Males & Females \\
+%	\midrule
+%	\multicolumn{2}{c} {BMI vs. SP} & \multicolumn{2}{c} {Systolic pressure} & \multicolumn{2}{c} {Systolic Pressure} \\
+%	\multicolumn{2}{c} {BMI vs. DP} & \multicolumn{2}{c} {Diastolic pressure} & \multicolumn{2}{c} {Diastolic pressure} \\
+%	\multicolumn{2}{c} {BMI vs. MAP} & \multicolumn{2}{c} {MAP} & \multicolumn{2}{c} {MAP} \\
+%	\multicolumn{2}{c} {W:H ratio vs. SP} & \multicolumn{2}{c} {BMI} & \multicolumn{2}{c} {BMI} \\
+%	\multicolumn{2}{c} {W:H ratio vs. DP} & \multicolumn{2}{c} {W:H ratio} & \multicolumn{2}{c} {W:H ratio} \\
+%	\multicolumn{2}{c} {W:H ratio vs. MAP} & \multicolumn{2}{c} {\% Body fat} & \multicolumn{2}{c} {\% Body fat} \\
+%	\multicolumn{2}{c} {} & \multicolumn{2}{c} {Height} & \multicolumn{2}{c} {Height} \\
+%	\multicolumn{2}{c} {} & \multicolumn{2}{c} {Weight} & \multicolumn{2}{c} {Weight} \\
+%	\multicolumn{2}{c} {} & \multicolumn{2}{c} {Heart rate} & \multicolumn{2}{c} {Heart rate} \\
+%	\bottomrule
+%	\end{tabular}
+%	\caption{Parameters that were analysed and related statistical test performed for current study. BMI - body mass index; SP - systolic pressure; DP - diastolic pressure; MAP - mean arterial pressure; W:H ratio - waist to hip ratio.}
+%	\label{label:tests}
+%\end{table}
