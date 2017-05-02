@@ -98,5 +98,5 @@ root_*
 .idea/
 
 #logs
-logs1.txt
-logs2.txt
+#logs1.txt
+#logs2.txt
