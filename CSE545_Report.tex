@@ -27,6 +27,8 @@
 \usepackage{hyperref}
 \usepackage{listings}
 
+\lstset{language=Bash}
+
 \hypersetup{
 	colorlinks,
 	citecolor=black,
@@ -129,8 +131,8 @@ Our design makes the following assumptions about the structure of the competitio
 
 \noindent The server code, named \texttt{"server.py"}, at a high level works as a basic REST API, and provides three functions. First, it serves the shellcode request for the \texttt{backdoor.sh} script, which in turn triggers the execution of the script on the victim machine. Second, it listens on a specific port and parses HTTP GET requests of the form
 
-\begin{lstlisting}
-    <host>:<port>/flag_{1}/flag_{2}/.../flag_{n}
+\begin{lstlisting}[mathescape]
+    <host>:<port>/flag$_{1}$/flag$_{2}$/.../flag$_{n}$
 \end{lstlisting}
 
 \noindent
