@@ -22,5 +22,20 @@ Now you can use all functions in it as follows:
 $.ipython
 >from codeyoloco import login
 #check if import is successful.
-#Write aggregation functions to make our task easy on the War Day
 
+>login.first_login() will generate root and ctf ssh keys in this directory.
+
+#other functions or uses
+>t = login.get_t()
+>t.get_targets(<id>)
+>t.submit_flag([])
+
+#All implementation related details added in the Project Report
+
+You can directly run 
+>python codeyoloco/login.py
+and
+>python codeyoloco/exploit_and_submit.py
+or call their functions (login.first_login() and exploit_and_submit.exploit())
+Calling exploit will automatically get all targets and run the exploits stated 
+in codeyoloco/config.txt and submit the flags too.
